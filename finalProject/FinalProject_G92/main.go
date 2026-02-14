@@ -14,7 +14,7 @@ func wvManager(worldviewCh chan [network.N]network.Call) {
 
 	//taking keyboard input for tests
 	for {
-		fmt.Print("Floor and direction (e.g. '2 u'): ")
+		fmt.Print("Floor and direction (e.g. '2 u'): \n")
 		fmt.Scan(&floor, &dir)
 		if floor >= 0 && floor < network.N {
 			switch dir {
