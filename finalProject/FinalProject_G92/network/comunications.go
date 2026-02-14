@@ -29,19 +29,15 @@ type Heartbeat struct {
 func PrintWorldView(wv [N]Call) {
 
 	for i := len(wv) - 1; i >= 0; i-- {
-		fmt.Printf("%d|", i)
 
+		up, down := "-", "-"
 		if wv[i].Up {
-			fmt.Printf(" ↑ |")
-		} else {
-			fmt.Printf(" - |")
+			up = "↑"
 		}
-
 		if wv[i].Down {
-			fmt.Printf(" ↓  \n")
-		} else {
-			fmt.Printf(" -  \n")
+			down = "↓"
 		}
+		fmt.Printf("%d| %s | %s \n", i, up, down)
 
 	}
 	fmt.Println()
