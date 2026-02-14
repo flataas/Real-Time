@@ -28,11 +28,21 @@ type Heartbeat struct {
 
 func PrintWorldView(wv [N]Call) {
 
-	fmt.Println("Floor | Up    | Down")
-	fmt.Println("------+-------+------")
 	for i := len(wv) - 1; i >= 0; i-- {
-		fmt.Printf("  %d   | %-5v | %-5v\n", i, wv[i].Up,
-			wv[i].Down)
+		fmt.Printf("%d|", i)
+
+		if wv[i].Up {
+			fmt.Printf(" ↑ |")
+		} else {
+			fmt.Printf(" - |")
+		}
+
+		if wv[i].Down {
+			fmt.Printf(" ↓  \n")
+		} else {
+			fmt.Printf(" -  \n")
+		}
+
 	}
 	fmt.Println()
 }
@@ -46,7 +56,7 @@ func Heart(wordlviewCh chan [N]Call, ip net.IP) {
 
 	var wv [N]Call
 
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
 	for {
