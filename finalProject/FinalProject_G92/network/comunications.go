@@ -50,8 +50,10 @@ func Heart(wordlviewCh chan [N]Call, ip net.IP) {
 
 	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", Port))
 
+	//singleton worldview instance
 	var wv [N]Call
 
+	//once a secodn to facilitate testing - Normaly, would be 100ms
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
