@@ -108,25 +108,42 @@ func Listener(heartbeatCh chan Heartbeat, ip net.IP) {
 func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat) {
 
 	var wv [N]Call
+	var hb Heartbeat
 
 	var floor int
 	var dir string
 
-	//taking keyboard input for tests
+	//syncing from incomming heartbeats
 	for {
-		fmt.Print("Floor and direction (e.g. '2 u'): \n")
-		fmt.Scan(&floor, &dir)
-		if floor >= 0 && floor < N {
-			switch dir {
-			case "u":
-				wv[floor].Up = !wv[floor].Up
-			case "d":
-				wv[floor].Down = !wv[floor].Down
-			default:
-				fmt.Println("Use 'u' or 'd'")
-				continue
+		select {
+		case hb = <-heartbeatCh:
+			for i := 0; i < N; i++ {
+				wv[i].Up = hb.Worldview[i].Up
+				wv[i].Down = hb.Worldview[i].Down
+
+				worldviewCh <- wv
 			}
-			worldviewCh <- wv
 		}
+
 	}
+
+	//taking keyboard input for tests
+
+	// for {
+	// 	fmt.Print("Floor and direction (e.g. '2 u'): \n")
+	// 	fmt.Scan(&floor, &dir)
+	// 	if floor >= 0 && floor < N {
+	// 		switch dir {
+	// 		case "u":
+	// 			wv[floor].Up = !wv[floor].Up
+	// 		case "d":
+	// 			wv[floor].Down = !wv[floor].Down
+	// 		default:
+	// 			fmt.Println("Use 'u' or 'd'")
+	// 			continue
+	// 		}
+	// 		worldviewCh <- wv
+	// 	}
+	// }
+
 }

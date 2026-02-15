@@ -20,8 +20,4 @@ func main() {
 	//worldview
 	go network.WorldviewManager(worldviewCh, heartbeatCh)
 
-	// Print heartbeats as they arrive
-	for hb := range heartbeatCh {
-		network.PrintWorldView(hb.Worldview)
-	}
 }
