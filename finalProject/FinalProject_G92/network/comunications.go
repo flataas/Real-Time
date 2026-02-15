@@ -21,6 +21,11 @@ type Call struct {
 	Down bool
 }
 
+type Order struct {
+	Dir   bool
+	Floor int
+}
+
 type Heartbeat struct {
 	IP        net.IP
 	Worldview [N]Call
@@ -105,29 +110,64 @@ func Listener(heartbeatCh chan Heartbeat, ip net.IP) {
 	}
 }
 
-func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat) {
-
-	var wv [N]Call
-	var hb Heartbeat
+func NewOrdersFromKB(newOrder chan Order) {
+	//taking keyboard input for tests
+	var no Order
 
 	var floor int
 	var dir string
+
+	for {
+		fmt.Print("Floor and direction (e.g. '2 u'): \n")
+		fmt.Scan(&floor, &dir)
+		if floor >= 0 && floor < N {
+			switch dir {
+			case "u":
+				no.Dir = true
+			case "d":
+				no.Dir = false
+			default:
+				fmt.Println("Use 'u' or 'd'")
+				continue
+			}
+			no.Floor = floor
+			newOrder <- no
+		}
+	}
+}
+
+func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newOrder chan Order) {
+
+	var wv [N]Call
+	var hb Heartbeat
 
 	//syncing from incomming heartbeats
 	for {
 		select {
 		case hb = <-heartbeatCh:
-			for i := 0; i < N; i++ {
-				wv[i].Up = hb.Worldview[i].Up
-				wv[i].Down = hb.Worldview[i].Down
+			for i := range N {
+				wv[i].Up = hb.Worldview[i].Up || wv[i].Up
+				wv[i].Down = hb.Worldview[i].Down || wv[i].Down
 
 				worldviewCh <- wv
 			}
+
+		case no := <-newOrder:
+
+			if no.Dir {
+				wv[no.Floor].Up = true
+			} else {
+				wv[no.Floor].Down = true
+			}
+
 		}
+		PrintWorldView(wv)
 
 	}
 
 	//taking keyboard input for tests
+	// var floor int
+	// var dir string
 
 	// for {
 	// 	fmt.Print("Floor and direction (e.g. '2 u'): \n")

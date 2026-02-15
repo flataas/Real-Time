@@ -14,10 +14,13 @@ func main() {
 	//handles outgoing worldviews
 	worldviewCh := make(chan [network.N]network.Call)
 
+	//handles new orders
+	orderCh := make(chan network.Order)
+
 	go network.Listener(heartbeatCh, ip)
 	go network.Heart(worldviewCh, ip)
+	go network.NewOrdersFromKB(orderCh)
 
-	//worldview
-	go network.WorldviewManager(worldviewCh, heartbeatCh)
+	network.WorldviewManager(worldviewCh, heartbeatCh, orderCh)
 
 }
