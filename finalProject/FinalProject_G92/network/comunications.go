@@ -17,8 +17,10 @@ const (
 
 // move types to types.go file, possibly?
 type Call struct {
-	Up   bool
-	Down bool
+	Up      bool
+	Down    bool
+	UpSeq   int
+	DownSeq int
 }
 
 type Order struct {
@@ -110,7 +112,7 @@ func Listener(heartbeatCh chan Heartbeat, ip net.IP) {
 	}
 }
 
-func NewOrdersFromKB(newOrder chan Order) {
+func NewOrdersFromKB(newOrder, removeOrder chan Order) {
 	//taking keyboard input for tests
 	var no Order
 
@@ -121,22 +123,28 @@ func NewOrdersFromKB(newOrder chan Order) {
 		fmt.Print("Floor and direction (e.g. '2 u'): \n")
 		fmt.Scan(&floor, &dir)
 		if floor >= 0 && floor < N {
+			no.Floor = floor
 			switch dir {
 			case "u":
 				no.Dir = true
+				newOrder <- no
 			case "d":
 				no.Dir = false
-			default:
-				fmt.Println("Use 'u' or 'd'")
-				continue
+				newOrder <- no
+
+			case "U":
+				no.Dir = true
+				removeOrder <- no
+			case "D":
+				no.Dir = false
+				removeOrder <- no
+
 			}
-			no.Floor = floor
-			newOrder <- no
 		}
 	}
 }
 
-func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newOrder chan Order) {
+func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newOrder, removeOrder chan Order) {
 
 	var wv [N]Call
 	var hb Heartbeat
@@ -146,44 +154,41 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 		select {
 		case hb = <-heartbeatCh:
 			for i := range N {
-				wv[i].Up = hb.Worldview[i].Up || wv[i].Up
-				wv[i].Down = hb.Worldview[i].Down || wv[i].Down
+				if wv[i].UpSeq < hb.Worldview[i].UpSeq {
+					wv[i].Up = hb.Worldview[i].Up
+					wv[i].UpSeq = hb.Worldview[i].UpSeq
+				}
+				if wv[i].DownSeq < hb.Worldview[i].DownSeq {
+					wv[i].Down = hb.Worldview[i].Down
+					wv[i].UpSeq = hb.Worldview[i].DownSeq
 
-				worldviewCh <- wv
+				}
+
 			}
+			worldviewCh <- wv
 
 		case no := <-newOrder:
-
 			if no.Dir {
 				wv[no.Floor].Up = true
+				wv[no.Floor].UpSeq++
 			} else {
 				wv[no.Floor].Down = true
+				wv[no.Floor].DownSeq++
+			}
+
+		case ro := <-removeOrder:
+			if ro.Dir {
+				wv[ro.Floor].Up = false
+				wv[ro.Floor].UpSeq++
+			} else {
+				wv[ro.Floor].Down = false
+				wv[ro.Floor].DownSeq++
 			}
 
 		}
+
 		PrintWorldView(wv)
 
 	}
-
-	//taking keyboard input for tests
-	// var floor int
-	// var dir string
-
-	// for {
-	// 	fmt.Print("Floor and direction (e.g. '2 u'): \n")
-	// 	fmt.Scan(&floor, &dir)
-	// 	if floor >= 0 && floor < N {
-	// 		switch dir {
-	// 		case "u":
-	// 			wv[floor].Up = !wv[floor].Up
-	// 		case "d":
-	// 			wv[floor].Down = !wv[floor].Down
-	// 		default:
-	// 			fmt.Println("Use 'u' or 'd'")
-	// 			continue
-	// 		}
-	// 		worldviewCh <- wv
-	// 	}
-	// }
 
 }

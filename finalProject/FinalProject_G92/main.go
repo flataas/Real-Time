@@ -16,11 +16,12 @@ func main() {
 
 	//handles new orders
 	orderCh := make(chan network.Order)
+	rmOrderCh := make(chan network.Order)
 
 	go network.Listener(heartbeatCh, ip)
 	go network.Heart(worldviewCh, ip)
-	go network.NewOrdersFromKB(orderCh)
+	go network.NewOrdersFromKB(orderCh, rmOrderCh)
 
-	network.WorldviewManager(worldviewCh, heartbeatCh, orderCh)
+	network.WorldviewManager(worldviewCh, heartbeatCh, orderCh, rmOrderCh)
 
 }
