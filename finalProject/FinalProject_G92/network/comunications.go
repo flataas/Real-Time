@@ -29,6 +29,7 @@ type Order struct {
 }
 
 type Heartbeat struct {
+	ID        int
 	IP        net.IP
 	Worldview [N]Call
 }
@@ -50,7 +51,7 @@ func PrintWorldView(wv [N]Call) {
 	fmt.Println()
 }
 
-func Heart(wordlviewCh chan [N]Call, ip net.IP) {
+func Heart(wordlviewCh chan [N]Call, ip net.IP, id int) {
 
 	conn := DialBroadcastUDP(Port)
 	defer conn.Close()
@@ -68,7 +69,7 @@ func Heart(wordlviewCh chan [N]Call, ip net.IP) {
 		case wv = <-wordlviewCh:
 
 		case <-ticker.C:
-			hb := Heartbeat{IP: ip, Worldview: wv}
+			hb := Heartbeat{ID: id, IP: ip, Worldview: wv}
 
 			var buf bytes.Buffer
 			enc := gob.NewEncoder(&buf)
@@ -88,7 +89,7 @@ func Heart(wordlviewCh chan [N]Call, ip net.IP) {
 
 }
 
-func Listener(heartbeatCh chan Heartbeat, ip net.IP) {
+func Listener(heartbeatCh chan Heartbeat) {
 	conn := DialBroadcastUDP(Port)
 	defer conn.Close()
 
@@ -149,6 +150,8 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 	var wv [N]Call
 	var hb Heartbeat
 
+	//TODO make the manager keep track of the connections, so that we can implement the button-light contract properly
+
 	//syncing from incomming heartbeats
 	for {
 		select {
@@ -165,6 +168,8 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 				}
 			}
 			worldviewCh <- wv
+			fmt.Println(hb.IP, hb.ID)
+			PrintWorldView(wv)
 
 		case no := <-newOrder:
 			if no.Dir {
@@ -185,8 +190,6 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 			}
 
 		}
-
-		PrintWorldView(wv)
 
 	}
 
