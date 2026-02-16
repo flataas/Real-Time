@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
+	"sort"
 	"time"
 )
 
@@ -47,6 +48,36 @@ func PrintWorldView(wv [N]Call) {
 		}
 		fmt.Printf("%d| %s | %s \n", i, up, down)
 
+	}
+	fmt.Println()
+}
+
+func PrintLobby(lobby map[int][N]Call) {
+	keys := make([]int, 0, len(lobby))
+	for k := range lobby {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	// Print header
+	for _, k := range keys {
+		fmt.Printf("  Node %-6d", k)
+	}
+	fmt.Println()
+
+	// Print rows from top to bottom
+	for i := N - 1; i >= 0; i-- {
+		for _, k := range keys {
+			up, down := "-", "-"
+			if lobby[k][i].Up {
+				up = "↑"
+			}
+			if lobby[k][i].Down {
+				down = "↓"
+			}
+			fmt.Printf("%d| %s | %s     ", i, up, down)
+		}
+		fmt.Println()
 	}
 	fmt.Println()
 }
@@ -150,12 +181,16 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 	var wv [N]Call
 	var hb Heartbeat
 
+	lobby := make(map[int][N]Call)
+
 	//TODO make the manager keep track of the connections, so that we can implement the button-light contract properly
 
 	//syncing from incomming heartbeats
 	for {
 		select {
 		case hb = <-heartbeatCh:
+			//adds to lobby for monitoring
+			lobby[hb.ID] = hb.Worldview
 			for i := range N {
 				if wv[i].UpSeq < hb.Worldview[i].UpSeq {
 					wv[i].Up = hb.Worldview[i].Up
@@ -168,8 +203,8 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 				}
 			}
 			worldviewCh <- wv
-			fmt.Println(hb.IP, hb.ID)
-			PrintWorldView(wv)
+			//should the lights be turned on?
+			PrintLobby(lobby)
 
 		case no := <-newOrder:
 			if no.Dir {
