@@ -176,6 +176,10 @@ func OrdersFromKB(newOrder, removeOrder chan Order) {
 	}
 }
 
+func updateLights(lobby map[int][N]Call) {
+	//think about comparing the sequence numbers!
+}
+
 func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newOrder, removeOrder chan Order) {
 
 	var wv [N]Call
