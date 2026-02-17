@@ -178,6 +178,31 @@ func OrdersFromKB(newOrder, removeOrder chan Order) {
 
 func updateLights(lobby map[int][N]Call) {
 	//think about comparing the sequence numbers!
+	var lights [N]Call
+	for i := range N { //for every floor
+
+		allUp := true
+		for _, elevator := range lobby {
+			if !elevator[i].Up {
+				allUp = false
+				break
+			}
+		}
+		lights[i].Up = allUp
+
+		allDown := true
+		for _, elevator := range lobby {
+			if !elevator[i].Down {
+				allDown = false
+				break
+			}
+		}
+		lights[i].Down = allDown
+	}
+
+	fmt.Println("lights:")
+	PrintWorldView(lights)
+
 }
 
 func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newOrder, removeOrder chan Order) {
@@ -209,6 +234,7 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 			worldviewCh <- wv
 			//should the lights be turned on?
 			PrintLobby(lobby)
+			updateLights(lobby)
 
 		case no := <-newOrder:
 			if no.Dir {
