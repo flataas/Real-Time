@@ -177,7 +177,6 @@ func OrdersFromKB(newOrder, removeOrder chan Order) {
 }
 
 func updateLights(lobby map[int][N]Call) {
-	//think about comparing the sequence numbers!
 	var lights [N]Call
 	for i := range N { //for every floor
 
