@@ -35,6 +35,13 @@ type Heartbeat struct {
 	Worldview [N]Call
 }
 
+type Node struct {
+	Alive     bool
+	Lastseen  time.Time
+	CabCalls  []int
+	Worldview [N]Call
+}
+
 func PrintWorldView(wv [N]Call) {
 
 	for i := len(wv) - 1; i >= 0; i-- {
@@ -47,12 +54,11 @@ func PrintWorldView(wv [N]Call) {
 			down = "↓"
 		}
 		fmt.Printf("%d| %s | %s \n", i, up, down)
-
 	}
 	fmt.Println()
 }
 
-func PrintLobby(lobby map[int][N]Call) {
+func PrintLobby(lobby map[int]Node) {
 	keys := make([]int, 0, len(lobby))
 	for k := range lobby {
 		keys = append(keys, k)
@@ -69,10 +75,10 @@ func PrintLobby(lobby map[int][N]Call) {
 	for i := N - 1; i >= 0; i-- {
 		for _, k := range keys {
 			up, down := "-", "-"
-			if lobby[k][i].Up {
+			if lobby[k].Worldview[i].Up {
 				up = "↑"
 			}
-			if lobby[k][i].Down {
+			if lobby[k].Worldview[i].Down {
 				down = "↓"
 			}
 			fmt.Printf("%d| %s | %s     ", i, up, down)
@@ -144,6 +150,7 @@ func Listener(heartbeatCh chan Heartbeat) {
 	}
 }
 
+// TO BE REPLACED BY HW
 func OrdersFromKB(newOrder, removeOrder chan Order) {
 	//taking keyboard input for tests
 	var no Order
@@ -176,13 +183,14 @@ func OrdersFromKB(newOrder, removeOrder chan Order) {
 	}
 }
 
-func updateLights(lobby map[int][N]Call) {
+// NEEDS TO SEND INFORMATION TO HW
+func updateLights(lobby map[int]Node) {
 	var lights [N]Call
 	for i := range N { //for every floor
 
 		allUp := true
 		for _, elevator := range lobby {
-			if !elevator[i].Up {
+			if !elevator.Worldview[i].Up {
 				allUp = false
 				break
 			}
@@ -191,7 +199,7 @@ func updateLights(lobby map[int][N]Call) {
 
 		allDown := true
 		for _, elevator := range lobby {
-			if !elevator[i].Down {
+			if !elevator.Worldview[i].Down {
 				allDown = false
 				break
 			}
@@ -209,16 +217,20 @@ func WorldviewManager(worldviewCh chan [N]Call, heartbeatCh chan Heartbeat, newO
 	var wv [N]Call
 	var hb Heartbeat
 
-	lobby := make(map[int][N]Call)
-
-	//TODO make the manager keep track of the connections, so that we can implement the button-light contract properly
+	lobby := make(map[int]Node)
 
 	//syncing from incomming heartbeats
 	for {
 		select {
 		case hb = <-heartbeatCh:
+
+			node := lobby[hb.ID]
+			node.Worldview = hb.Worldview
+			node.Lastseen = time.Now()
+			node.Alive = true
+			lobby[hb.ID] = node
+
 			//adds to lobby for monitoring
-			lobby[hb.ID] = hb.Worldview
 			for i := range N {
 				if wv[i].UpSeq < hb.Worldview[i].UpSeq {
 					wv[i].Up = hb.Worldview[i].Up
