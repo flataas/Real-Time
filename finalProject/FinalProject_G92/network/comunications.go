@@ -20,6 +20,7 @@ const (
 type Call struct {
 	Up      bool
 	Down    bool
+	Cab     bool
 	UpSeq   int
 	DownSeq int
 }
@@ -36,9 +37,9 @@ type Heartbeat struct {
 }
 
 type Node struct {
-	Alive     bool
-	Lastseen  time.Time
-	CabCalls  []int
+	Alive    bool
+	Lastseen time.Time
+
 	Worldview [N]Call
 }
 
@@ -46,14 +47,17 @@ func PrintWorldView(wv [N]Call) {
 
 	for i := len(wv) - 1; i >= 0; i-- {
 
-		up, down := "-", "-"
+		up, down, cab := "-", "-", " "
 		if wv[i].Up {
 			up = "↑"
 		}
 		if wv[i].Down {
 			down = "↓"
 		}
-		fmt.Printf("%d| %s | %s \n", i, up, down)
+		if wv[i].Cab {
+			cab = "•"
+		}
+		fmt.Printf("%d| %s | %s | %s\n", i, up, down, cab)
 	}
 	fmt.Println()
 }
@@ -67,21 +71,24 @@ func PrintLobby(lobby map[int]Node) {
 
 	// Print header
 	for _, k := range keys {
-		fmt.Printf("  Node %-6d", k)
+		fmt.Printf("    Node %-6d", k)
 	}
 	fmt.Println()
 
 	// Print rows from top to bottom
 	for i := N - 1; i >= 0; i-- {
 		for _, k := range keys {
-			up, down := "-", "-"
+			up, down, cab := "-", "-", "◦"
 			if lobby[k].Worldview[i].Up {
 				up = "↑"
 			}
 			if lobby[k].Worldview[i].Down {
 				down = "↓"
 			}
-			fmt.Printf("%d| %s | %s     ", i, up, down)
+			if lobby[k].Worldview[i].Cab {
+				down = "•"
+			}
+			fmt.Printf("%d| %s | %s | %s     ", i, up, down, cab)
 		}
 		fmt.Println()
 	}
@@ -177,8 +184,10 @@ func OrdersFromKB(newOrder, removeOrder chan Order) {
 			case "D":
 				no.Dir = false
 				removeOrder <- no
+			case "C":
 
 			}
+
 		}
 	}
 }
