@@ -32,8 +32,9 @@ type Order struct {
 }
 
 type Worldview struct {
-	HallCalls [N]HallCall
-	CabCalls  [N]bool
+	HallCalls  [N]HallCall
+	CabCalls   [N]bool
+	CabCallLog map[int]Node
 }
 
 type Heartbeat struct {
@@ -68,7 +69,7 @@ func PrintHallCalls(hc [N]HallCall) {
 func PrintLobby(lobby map[int]Node) {
 	keys := make([]int, 0, len(lobby))
 	for k := range lobby {
-		if lobby[k].Alive {
+		if true {
 			keys = append(keys, k)
 		}
 	}
@@ -133,11 +134,8 @@ func Heart(wordlviewCh chan Worldview, ip net.IP, id int) {
 			if err != nil {
 				fmt.Println("Error sending heartbeat: ", err)
 			}
-
 		}
-
 	}
-
 }
 
 func Listener(heartbeatCh chan Heartbeat) {
@@ -233,13 +231,15 @@ func updateLights(lobby map[int]Node) {
 
 }
 
-func NetworkManager(worldviewCh chan Worldview, heartbeatCh chan Heartbeat, newOrder, removeOrder chan Order) {
+func NetworkManager(myId int, worldviewCh chan Worldview, heartbeatCh chan Heartbeat, newOrder, removeOrder chan Order) {
 
 	var wv Worldview
 	var hb Heartbeat
 
 	lobby := make(map[int]Node)
 	//recovery := make(map[int][]int)
+
+	booted := false
 
 	//managing disconnections
 	const DisconnectTimeout = 3 * time.Second
@@ -253,11 +253,20 @@ func NetworkManager(worldviewCh chan Worldview, heartbeatCh chan Heartbeat, newO
 
 			node := lobby[hb.ID]
 			node.Worldview.HallCalls = hb.Worldview.HallCalls
+
+			if !booted {
+				if storedNode, ok := hb.Worldview.CabCallLog[myId]; ok {
+					wv.CabCalls = storedNode.Worldview.CabCalls
+					booted = true
+				}
+			}
+
+			node.Worldview.CabCalls = hb.Worldview.CabCalls
+
 			node.Lastseen = time.Now()
 			node.Alive = true
 			lobby[hb.ID] = node
 
-			//adds to lobby for monitoring
 			for i := range N {
 				if wv.HallCalls[i].UpSeq < hb.Worldview.HallCalls[i].UpSeq {
 					wv.HallCalls[i].Up = hb.Worldview.HallCalls[i].Up
@@ -265,11 +274,12 @@ func NetworkManager(worldviewCh chan Worldview, heartbeatCh chan Heartbeat, newO
 				}
 				if wv.HallCalls[i].DownSeq < hb.Worldview.HallCalls[i].DownSeq {
 					wv.HallCalls[i].Down = hb.Worldview.HallCalls[i].Down
-					wv.HallCalls[i].UpSeq = hb.Worldview.HallCalls[i].DownSeq
+					wv.HallCalls[i].DownSeq = hb.Worldview.HallCalls[i].DownSeq
 				}
 			}
+			wv.CabCallLog = lobby
 			worldviewCh <- wv
-			//should the lights be turned on?
+
 			PrintLobby(lobby)
 			updateLights(lobby)
 

@@ -32,6 +32,6 @@ func main() {
 	go network.Heart(worldviewCh, ip, id)
 	go network.OrdersFromKB(orderCh, rmOrderCh)
 
-	network.NetworkManager(worldviewCh, heartbeatCh, orderCh, rmOrderCh)
+	network.NetworkManager(id, worldviewCh, heartbeatCh, orderCh, rmOrderCh)
 
 }
