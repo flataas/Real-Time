@@ -100,7 +100,6 @@ func PrintLobby(lobby map[int]Node) {
 		fmt.Println()
 	}
 	fmt.Println()
-
 }
 
 func Heart(worldviewCh chan Worldview, ip net.IP, id int) {
@@ -296,18 +295,6 @@ func NetworkManager(myId int, worldviewCh chan Worldview, heartbeatCh chan Heart
 				wv.HallCalls[no.Floor].Down = true
 				wv.HallCalls[no.Floor].DownSeq++
 			}
-			/*
-				switch no.Dir {
-				case true:
-					wv[no.Floor].Up = true
-					wv[no.Floor].UpSeq++
-				case 1:
-					wv[no.Floor].Down = true
-					wv[no.Floor].DownSeq++
-				case 0:
-					wv[no.Floor].Cab = true
-				}
-			*/
 
 		case ro := <-removeOrder:
 			if ro.Cab {
@@ -319,18 +306,6 @@ func NetworkManager(myId int, worldviewCh chan Worldview, heartbeatCh chan Heart
 				wv.HallCalls[ro.Floor].Down = false
 				wv.HallCalls[ro.Floor].DownSeq++
 			}
-			/*
-				switch ro.Dir {
-				case 2:
-					wv[ro.Floor].Up = false
-					wv[ro.Floor].UpSeq++
-				case 1:
-					wv[ro.Floor].Down = false
-					wv[ro.Floor].DownSeq++
-				case 0:
-					wv[ro.Floor].Cab = false
-				}
-			*/
 
 		case <-disconnectTicker.C:
 			for id, node := range lobby {
